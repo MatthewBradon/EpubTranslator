@@ -98,3 +98,6 @@ def run_model_multiprocessing(inputs, num_workers=2):
     sys.stdout.flush()
 
     return results
+
+def print_func(text):
+    print(text)
