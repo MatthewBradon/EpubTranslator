@@ -584,7 +584,6 @@ std::string stripHtmlTags(const std::string& input) {
 
 std::vector<tagData> extractTags(const std::vector<std::filesystem::path>& chapterPaths) {
     // Initialize the 2D vector to store the tag data for each chapter
-    // Initialize the 2D vector to store the tag data for each chapter
     std::vector<tagData> bookTags;  // This will hold tag data for the entire book
     
     int chapterNum = 0;
@@ -699,7 +698,7 @@ void convertEncodedDataToPython(const std::vector<encodedData>& data_vector, pyb
     pybind11::dict py_dict;
     int mockCounter = 0;
     for (const auto& data : data_vector) {
-        if (mockCounter == 150) {
+        if (mockCounter == -1) {
             break;
         }
         // Here, we use a tuple of (chapterNum, position) as a key
@@ -1002,6 +1001,11 @@ int run(const std::string& epubToConvert, const std::string& outputEpubPath) {
     std::chrono::duration<double> elapsed = end - start;
 
     std::cout << "Time taken: " << elapsed.count() << "s" << std::endl;
+
+    // Remove the unzipped and export directories
+    std::filesystem::remove_all(unzippedPath);
+    std::filesystem::remove_all(templatePath);
+    
     return 0;
 }
 

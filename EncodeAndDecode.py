@@ -75,7 +75,7 @@ def process_task(encoded_data):
         sys.stdout.flush()
         return None
 
-def run_model_multiprocessing(inputs, num_workers=4):
+def run_model_multiprocessing(inputs, num_workers=2):
     """Function to distribute tasks among workers using multiprocessing.Pool."""
     # Create a pool of worker processes
     with mp.Pool(processes=num_workers) as pool:
