@@ -582,130 +582,6 @@ std::string stripHtmlTags(const std::string& input) {
     return std::regex_replace(input, tagRegex, "");
 }
 
-// std::vector<tagData> extractTags(const std::vector<std::filesystem::path>& chapterPaths, pybind11::module& EncodeDecode) {
-//     // Initialize the 2D vector to store the tag data for each chapter
-//     std::vector<tagData> bookTags;  // This will hold tag data for the entire book
-//     pybind11::object print_func = EncodeDecode.attr("print_func");
-
-//     int chapterNum = 0;
-
-//     for (const std::filesystem::path& chapterPath : chapterPaths) {
-        
-//         std::ifstream file(chapterPath);
-//         if (!file.is_open()) {
-//             std::cerr << "Failed to open file: " << chapterPath << std::endl;
-//             continue;  // Continue with the next chapter instead of returning
-//         }
-
-//         // Read the entire content of the chapter file
-//         std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-//         file.close();
-
-//         // Parse the content using libxml2
-//         htmlDocPtr doc = htmlReadMemory(data.c_str(), data.size(), NULL, NULL, HTML_PARSE_RECOVER | HTML_PARSE_NOERROR | HTML_PARSE_NOWARNING);
-//         if (!doc) {
-//             std::cerr << "Failed to parse HTML content." << std::endl;
-//             continue;  // Continue with the next chapter
-//         }
-
-//         // Create an XPath context
-//         xmlXPathContextPtr xpathCtx = xmlXPathNewContext(doc);
-//         if (!xpathCtx) {
-//             std::cerr << "Failed to create XPath context." << std::endl;
-//             xmlFreeDoc(doc);
-//             continue;  // Continue with the next chapter
-//         }
-
-//         // Extract all <p> and <img> tags
-//         xmlXPathObjectPtr xpathObj = xmlXPathEvalExpression(reinterpret_cast<const xmlChar*>("//p | //img"), xpathCtx);
-        
-//         if (!xpathObj) {
-//             std::cerr << "Failed to evaluate XPath expression." << std::endl;
-//             xmlXPathFreeContext(xpathCtx);
-//             xmlFreeDoc(doc);
-//             continue;  // Continue with the next chapter
-//         }
-
-//         xmlNodeSetPtr nodes = xpathObj->nodesetval;
-//         int nodeCount = (nodes) ? nodes->nodeNr : 0;
-
-//         std::vector<tagData> chapterTags;  // Vector to hold tag data for the current chapter
-//         for (int i = 0; i < nodeCount; ++i) {
-//             xmlNodePtr node = nodes->nodeTab[i];
-//             if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, reinterpret_cast<const xmlChar*>("p")) == 0) {
-//                 // Extract text content of <p> tag
-//                 xmlChar* textContent = xmlNodeGetContent(node);
-//                 if (textContent) {
-//                     try {
-//                         // Convert the text content to a std::string
-//                         // std::string pText(reinterpret_cast<const char*>(textContent));
-                        
-//                         std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-//                         std::wstring wideString = converter.from_bytes(reinterpret_cast<const char*>(textContent));
-//                         std::string pText = converter.to_bytes(wideString);
-
-
-//                         // Use py::str to ensure correct handling of UTF-8
-//                         pybind11::str pythonStr = pybind11::str(pText);
-
-//                         // Pass the string to the Python print function
-//                         print_func(pythonStr);
-
-//                         if (!pText.empty()) {
-//                             // Strip HTML tags and prepare the text
-//                             std::string strippedText = stripHtmlTags(pText);
-
-//                             // Create tagData struct
-//                             tagData tag;
-//                             tag.tagId = P_TAG;
-//                             tag.text = strippedText;
-//                             tag.position = i;
-//                             tag.chapterNum = chapterNum;
-
-//                             // Append the tag to chapterTags
-//                             bookTags.push_back(tag);
-//                         }
-//                     } catch (const std::exception& e) {
-//                         std::cerr << "Error: " << e.what() << std::endl;
-//                     }
-//                     xmlFree(textContent);
-//                 }
-//             } else if (node->type == XML_ELEMENT_NODE && xmlStrcmp(node->name, reinterpret_cast<const xmlChar*>("img")) == 0) {
-//                 // Extract src attribute of <img> tag
-//                 xmlChar* src = xmlGetProp(node, reinterpret_cast<const xmlChar*>("src"));
-//                 if (src) {
-//                     std::string imgSrc(reinterpret_cast<char*>(src));
-//                     std::string imgFilename = std::filesystem::path(imgSrc).filename().string();
-
-//                     // Create tagData struct for the image
-//                     tagData tag;
-//                     tag.tagId = IMG_TAG;
-//                     tag.text = imgFilename;  // Store the image filename
-//                     tag.position = i;
-//                     tag.chapterNum = chapterNum;
-
-//                     // Append the tag to chapterTags
-//                     bookTags.push_back(tag);
-
-//                     xmlFree(src);
-//                 }
-//             }
-//         }
-
-
-
-//         // Free resources for the current chapter
-//         xmlXPathFreeObject(xpathObj);
-//         xmlXPathFreeContext(xpathCtx);
-//         xmlFreeDoc(doc);
-        
-//         std::cout << "Chapter done: " << chapterPath.filename().string() << std::endl;
-//         chapterNum++;
-//     }
-
-//     return bookTags;
-// }
-
 std::vector<tagData> extractTags(const std::vector<std::filesystem::path>& chapterPaths, pybind11::module& EncodeDecode) {
     // Initialize the vector to store tag data for the entire book
     std::vector<tagData> bookTags;
@@ -829,7 +705,7 @@ void convertEncodedDataToPython(const std::vector<encodedData>& data_vector, pyb
     pybind11::dict py_dict;
     int mockCounter = 0;
     for (const auto& data : data_vector) {
-        if (mockCounter == -1) {
+        if (mockCounter == 70) {
             break;
         }
         // Here, we use a tuple of (chapterNum, position) as a key

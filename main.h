@@ -19,8 +19,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "GUI.h"
-#include <locale>
-#include <codecvt>
 
 #define PYBIND11_DETAILED_ERROR_MESSAGES
 #define P_TAG 0
