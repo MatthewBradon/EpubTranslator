@@ -94,8 +94,8 @@ def run_model_multiprocessing(file_path, num_workers=2):
     # Create a pool of worker processes
     with mp.Pool(processes=num_workers) as pool:
         # Submit tasks to the pool
-        results = pool.map(process_task, tasks)
-        # results = pool.map(process_task, mock_tasks)
+        # results = pool.map(process_task, tasks)
+        results = pool.map(process_task, mock_tasks)
 
     # Filter out None results (if any errors occurred)
     results = [result for result in results if result is not None]

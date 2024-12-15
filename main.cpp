@@ -723,7 +723,18 @@ int run(const std::string& epubToConvert, const std::string& outputEpubPath) {
     
     // Get the current executable path and resolve to the known relative path
     std::filesystem::path currentDirPath = std::filesystem::current_path();
-    std::filesystem::path libPath = currentDirPath / "build" / "vcpkg_installed" / "x64-windows" / "tools" / "python3" / "Lib";
+    std::filesystem::path libPath;
+    #if defined(__APPLE__)
+        libPath = currentDirPath / "build" / ".venv" / "lib" / "python3.11";
+    #elif defined(_WIN32)
+        libPath = currentDirPath / "build" / ".venv" / "Lib" / "python3.11";
+    #else
+        std::cerr << "Unsupported platform!" << std::endl;
+        return 1; // Or some other error handling
+    #endif
+
+    // std::filesystem::path libPath = currentDirPath / "build" / "vcpkg_installed" /  / "tools" / "python3" / "Lib";
+    // std::filesystem::path libPath = currentDirPath / "build" / "vcpkg_installed" / "x64-windows" / "tools" / "python3" / "Lib";
     std::filesystem::path sitePackagesPath = libPath / "site-packages";
 
 
@@ -740,7 +751,6 @@ int run(const std::string& epubToConvert, const std::string& outputEpubPath) {
     pybind11::module sys = pybind11::module::import("sys");
 
     sys.attr("path").attr("append")(sitePackagesPath.u8string());
-
 
     pybind11::print(sys.attr("path"));
 
@@ -870,20 +880,6 @@ int run(const std::string& epubToConvert, const std::string& outputEpubPath) {
 
         pybind11::object encodeText = tokenizer.attr("tokenize_text");
 
-
-        // std::vector<encodedData> encodedTags;
-        // // Tokenize every text in the bookTags
-        // for (auto& tag : bookTags) {
-        //     if (tag.tagId == P_TAG) {
-        //         encodedData encodedTag;
-        //         encodedTag.encoded = encodeText(tag.text);
-        //         encodedTag.position = tag.position;
-        //         encodedTag.chapterNum = tag.chapterNum;
-
-        //         encodedTags.push_back(encodedTag);
-        //     }
-        // }
-
         std::string encodedTagsPathString = "./encodedTags.txt";
         std::filesystem::path encodedTagsPath = encodedTagsPathString;
         std::ofstream encodedTagsFile(encodedTagsPath);
@@ -921,13 +917,19 @@ int run(const std::string& epubToConvert, const std::string& outputEpubPath) {
         // Create pipes for capturing stdout and stderr
         boost::process::ipstream pipe_stdout;
         boost::process::ipstream pipe_stderr;
-
-        std::filesystem::path pythonEXEPath = currentDirPath / "build" / "vcpkg_installed" / "x64-windows" / "tools" / "python3" / "python.exe";
+        std::filesystem::path pythonEXEPath;
+        #if defined(__APPLE__)
+            pythonEXEPath = currentDirPath / "build" / ".venv" / "bin" / "python3";
+        #elif defined(_WIN32)
+            pythonEXEPath = currentDirPath / "build" / ".venv" / "bin" / "python3";
+        #else
+            std::cerr << "Unsupported platform!" << std::endl;
+            return 1; // Or some other error handling
+        #endif
 
         std::string pythonEXEStringPath = pythonEXEPath.string();
 
         try {
-            // C:\Users\matth\Desktop\EpubTranslator\build\vcpkg_installed\x64-windows\tools\python3\python.exe
             // Start the Python script as a child process
             boost::process::child c(
                 pythonEXEStringPath,           // Find the Python executable
@@ -1082,6 +1084,15 @@ int run(const std::string& epubToConvert, const std::string& outputEpubPath) {
         std::filesystem::remove_all(unzippedPath);
         std::filesystem::remove_all(templatePath);
 
+        if (std::filesystem::exists("translatedTags.txt")) {
+            std::filesystem::remove("translatedTags.txt");  // Deletes the file
+            std::cout << "File deleted successfully!" << std::endl;
+        }
+        if (std::filesystem::exists("encodedTags.txt")) {
+            std::filesystem::remove("encodedTags.txt");  // Deletes the file
+            std::cout << "File deleted successfully!" << std::endl;
+        }
+
         // End timer
         auto end = std::chrono::high_resolution_clock::now();
 
@@ -1098,23 +1109,6 @@ int run(const std::string& epubToConvert, const std::string& outputEpubPath) {
     return 0;
 }
 
-class LogWindow {
-public:
-    std::string logBuffer;
-
-    void addLog(const std::string& log) {
-        logBuffer += log; // Append new logs to the buffer
-    }
-
-    void render() {
-        ImGui::Begin("Log Output");
-        ImGui::TextUnformatted(logBuffer.c_str()); // Display the logs
-        if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
-            ImGui::SetScrollHereY(1.0f); // Auto-scroll to the bottom
-        }
-        ImGui::End();
-    }
-};
 
 int main() {
 

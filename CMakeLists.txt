@@ -1,12 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-# Set the toolchain for vcpkg
- if(CMAKE_SYSTEM_NAME MATCHES "Windows")
-set(CMAKE_TOOLCHAIN_FILE "C:/Users/matth/vcpkg/scripts/buildsystems/vcpkg.cmake")
-elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-set(CMAKE_TOOLCHAIN_FILE "/Users/xsmoked/vcpkg/scripts/buildsystems/vcpkg.cmake")
-endif()
-
 set(CMAKE_CXX_STANDARD 17)
 project(main)
 
@@ -35,13 +28,30 @@ message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
 message(STATUS "Python3_INCLUDE_DIR: ${Python3_INCLUDE_DIR}")
 message(STATUS "Python3_LIBRARY: ${Python3_LIBRARY}")
 
-# Install Python dependencies using requirements.txt
-add_custom_target(InstallPythonPackages ALL
-    COMMAND ${Python3_EXECUTABLE} -m ensurepip
-    COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade pip
-    COMMAND ${Python3_EXECUTABLE} -m pip install -r ${CMAKE_SOURCE_DIR}/requirements.txt
-    COMMENT "Installing required Python packages from requirements.txt"
-)
+
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    # Install Python dependencies using requirements.txt for macOS
+    add_custom_target(InstallPythonPackages ALL
+        COMMAND ${Python3_EXECUTABLE} -m venv .venv                    # Create virtual environment
+        COMMAND ${CMAKE_SOURCE_DIR}/build/.venv/bin/python3 -m pip install --upgrade pip   # Upgrade pip in the virtual environment
+        COMMAND ${CMAKE_SOURCE_DIR}/build/.venv/bin/python3 -m pip install -r ${CMAKE_SOURCE_DIR}/requirements.txt  # Install dependencies
+        COMMENT "Installing required Python packages from requirements.txt on macOS"
+    )
+
+elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    # Install Python dependencies using requirements.txt for Windows
+    add_custom_target(InstallPythonPackages ALL
+        COMMAND ${Python3_EXECUTABLE} -m venv .venv                    # Create virtual environment
+        COMMAND ${CMAKE_SOURCE_DIR}/.venv/Scripts/python.exe -m pip install --upgrade pip   # Upgrade pip in the virtual environment
+        COMMAND ${CMAKE_SOURCE_DIR}/.venv/Scripts/python.exe -m pip install -r ${CMAKE_SOURCE_DIR}/requirements.txt  # Install dependencies
+        COMMENT "Installing required Python packages from requirements.txt on Windows"
+    )
+endif()
+
+# Ensure the Python packages are installed before building the executable
+add_dependencies(${PROJECT_NAME} InstallPythonPackages)
+
+
 
 # Link libraries
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
