@@ -35,3 +35,4 @@ results/
 fine_tuned_model/
 testHTML/*
 translatedHTML/*
+llama-model/*

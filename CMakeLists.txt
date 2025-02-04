@@ -62,11 +62,12 @@ include_directories(${MUPDF_INCLUDE_DIR})
 # Add Llama.cpp
 add_subdirectory(${CMAKE_SOURCE_DIR}/external/llama.cpp)
 
-set(LLAMACPP_LIB_DIR "${CMAKE_SOURCE_DIR}/external/llama.cpp/build/src/Release")
+
 
 # Include directories for Llama.cpp
 include_directories(${CMAKE_SOURCE_DIR}/external/llama.cpp/include)
 include_directories(${CMAKE_SOURCE_DIR}/external/llama.cpp/ggml/include/)
+include_directories(${CMAKE_SOURCE_DIR}/external/llama.cpp/src/)
 
 
 # Link libraries
@@ -83,7 +84,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     )
 elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 
-    file(GLOB LLAMACPP_LIBS "${LLAMACPP_LIB_DIR}/*.lib")
+    set(LLAMACPP_LIB_DIR "${CMAKE_SOURCE_DIR}/external/llama.cpp/build/src/Release")
 
     target_link_libraries(${PROJECT_NAME} PRIVATE
         CURL::libcurl 
@@ -92,7 +93,7 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
         nfd::nfd glad::glad glfw imgui::imgui 
         libzip::zip LibXml2::LibXml2
         ${MUPDF_LIBS} # Include all MuPDF libraries
-        ${LLAMACPP_LIBS}
+        ${LLAMACPP_LIB_DIR}/llama.lib
         )
     target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/include)
 endif()
@@ -121,16 +122,27 @@ add_executable(BookTranslatorTest
 # Include directories for headers
 target_include_directories(BookTranslatorTest PRIVATE src)
 
-# Link test executable with required libraries
-target_link_libraries(BookTranslatorTest PRIVATE
-    CURL::libcurl nlohmann_json::nlohmann_json
-    Catch2::Catch2 Catch2::Catch2WithMain
-    PkgConfig::cairo PkgConfig::cairo-script-interpreter
-    Boost::process Boost::filesystem Boost::system 
-    nfd::nfd glad::glad glfw imgui::imgui 
-    libzip::zip LibXml2::LibXml2
-    ${MUPDF_LIBS} # Include all MuPDF libraries
-)
+if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+
+
+elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    set(LLAMACPP_LIB_DIR "${CMAKE_SOURCE_DIR}/external/llama.cpp/build/src/Release")
+
+    # Link test executable with required libraries
+    target_link_libraries(BookTranslatorTest PRIVATE
+        CURL::libcurl nlohmann_json::nlohmann_json
+        Catch2::Catch2 Catch2::Catch2WithMain
+        PkgConfig::cairo PkgConfig::cairo-script-interpreter
+        Boost::process Boost::filesystem Boost::system 
+        nfd::nfd glad::glad glfw imgui::imgui 
+        libzip::zip LibXml2::LibXml2
+        ${MUPDF_LIBS} # Include all MuPDF libraries
+        ${LLAMACPP_LIB_DIR}/llama.lib
+    )
+
+endif()
+
+
 
 target_include_directories(BookTranslatorTest PRIVATE ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/include)
 

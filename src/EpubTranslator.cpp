@@ -1,6 +1,5 @@
 #include "EpubTranslator.h"
-
-
+#define MAX_TOKENS 256
 
 
 std::filesystem::path EpubTranslator::searchForOPFFiles(const std::filesystem::path& directory) {
@@ -1085,8 +1084,129 @@ int EpubTranslator::handleDeepLRequest(const std::vector<tagData>& bookTags, con
 
 
 
+std::string correctGrammar(llama_context *ctx, llama_model *model, const std::string &input) {
+    std::string prompt = "Fix the grammar while keeping the original meaning:\n\n"
+                         "Original: \"" + input + "\"\n"
+                         "Corrected: ";
+
+    // Tokenize input prompt
+    const llama_vocab *vocab = llama_model_get_vocab(model);
+    std::vector<llama_token> tokens(512);
+    int n_tokens = llama_tokenize(vocab, prompt.c_str(), prompt.size(), tokens.data(), tokens.size(), true, true);
+
+    if (n_tokens < 0) {
+        std::cerr << "Tokenization failed!" << std::endl;
+        return "";
+    }
+    tokens.resize(n_tokens);
+    std::cout << "Tokenized " << n_tokens << " tokens.\n";
+
+    // Create batch for initial input tokens
+    llama_batch batch = llama_batch_get_one(tokens.data(), tokens.size());
+
+    // Run decoding for initial tokens
+    if (llama_decode(ctx, batch) != 0) {
+        std::cerr << "LLama decoding failed!" << std::endl;
+        return "";
+    }
+
+    // Initialize sampler (greedy)
+    auto sparams = llama_sampler_chain_default_params();
+    sparams.no_perf = false;
+    llama_sampler *sampler = llama_sampler_chain_init(sparams);
+    llama_sampler_chain_add(sampler, llama_sampler_init_greedy());
+
+    std::string output;
+    int max_tokens = 100;  // Adjust based on expected output length
+    llama_token token;
+
+    for (int i = 0; i < max_tokens; i++) {
+        token = llama_sampler_sample(sampler, ctx, -1);
+        
+        if (llama_vocab_is_eog(vocab, token)) {
+            break;  // Stop if EOS token is generated
+        }
+
+        char token_str[64];
+        if (llama_token_to_piece(vocab, token, token_str, sizeof(token_str), 0, true) > 0) {
+            output += token_str;
+        }
+
+        // Prepare batch for next token
+        batch = llama_batch_get_one(&token, 1);
+
+        if (llama_decode(ctx, batch) != 0) {
+            std::cerr << "LLama decoding failed during generation!" << std::endl;
+            break;
+        }
+    }
+
+    // Cleanup
+    llama_sampler_free(sampler);
+    return output;
+}
+
+
+
+
 int EpubTranslator::run(const std::string& epubToConvert, const std::string& outputEpubPath, int localModel, const std::string& deepLKey) {
+    const std::string MODEL_PATH = "llama-model/tinyllama-1.1b-chat-v1.0.Q5_K_M.gguf";
+
+    // Initialize LLaMA backend
+    llama_backend_init();
+
+    // Set up model parameters
+    llama_model_params model_params = llama_model_default_params();
+    llama_context_params ctx_params = llama_context_default_params();
+    ctx_params.n_ctx = 512;  
+    ctx_params.n_batch = 1;  
+    ctx_params.n_threads = std::thread::hardware_concurrency();
+
+    // Load model
+    llama_model *model = llama_model_load_from_file(MODEL_PATH.c_str(), model_params);
+    if (!model) {
+        std::cerr << "Failed to load model from " << MODEL_PATH << std::endl;
+        return 1;
+    }
+
+    // Create context
+    llama_context *ctx = llama_init_from_model(model, ctx_params);
+    if (!ctx) {
+        std::cerr << "Failed to create LLama context!" << std::endl;
+        llama_model_free(model);
+        return 1;
+    }
+
+    // Open input and output files
+    std::ifstream infile("translatedDeepL.txt");
+    std::ofstream outfile("corrected_text.txt");
+
+    if (!infile.is_open()) {
+        std::cerr << "Failed to open input file: translatedDeepL.txt" << std::endl;
+        llama_free(ctx);
+        llama_model_free(model);
+        return 1;
+    }
     
+    std::string sentenceLine;
+    while (std::getline(infile, sentenceLine)) {
+        if (!sentenceLine.empty() && sentenceLine.find_first_not_of(" \t\r\n") != std::string::npos) {
+            std::string corrected = correctGrammar(ctx, model, sentenceLine);
+            outfile << corrected << std::endl;
+            std::cout << "Fixed: " << corrected << std::endl; 
+        }
+    }
+
+    // Cleanup
+    llama_free(ctx);
+    llama_model_free(model);
+    llama_backend_free();
+
+    std::cout << "Grammar correction complete. Output saved to corrected_text.txt\n";
+    return 0;
+
+
+
     std::cout << "localModel: " << localModel << "\n";
 
     std::filesystem::path currentDirPath = std::filesystem::current_path();
