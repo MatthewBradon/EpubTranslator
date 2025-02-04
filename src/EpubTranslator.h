@@ -23,7 +23,7 @@
 #include <curl/curl.h>
 #include "Translator.h"
 #include <nlohmann/json.hpp>
-
+#include "llama.h"
 
 #define P_TAG 0
 #define IMG_TAG 1

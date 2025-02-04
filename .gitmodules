@@ -1,3 +1,6 @@
 [submodule "external/mupdf"]
 	path = external/mupdf
 	url = https://github.com/ArtifexSoftware/mupdf.git
+[submodule "external/llama.cpp"]
+	path = external/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git

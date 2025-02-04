@@ -57,7 +57,16 @@ endif()
 # Include the MuPDF headers
 include_directories(${MUPDF_INCLUDE_DIR})
 
-# Dynamically collect all .lib files in the MuPDF library directory
+
+
+# Add Llama.cpp
+add_subdirectory(${CMAKE_SOURCE_DIR}/external/llama.cpp)
+
+set(LLAMACPP_LIB_DIR "${CMAKE_SOURCE_DIR}/external/llama.cpp/build/src/Release")
+
+# Include directories for Llama.cpp
+include_directories(${CMAKE_SOURCE_DIR}/external/llama.cpp/include)
+include_directories(${CMAKE_SOURCE_DIR}/external/llama.cpp/ggml/include/)
 
 
 # Link libraries
@@ -69,8 +78,12 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         nfd::nfd glad::glad glfw imgui::imgui 
         libzip::zip LibXml2::LibXml2
         ${MUPDF_LIBS} # Include all MuPDF libraries
+        ${LLAMACPP_LIB_DIR}
     )
 elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
+
+    file(GLOB LLAMACPP_LIBS "${LLAMACPP_LIB_DIR}/*.lib")
+
     target_link_libraries(${PROJECT_NAME} PRIVATE
         CURL::libcurl 
         PkgConfig::cairo PkgConfig::cairo-script-interpreter
@@ -78,7 +91,8 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
         nfd::nfd glad::glad glfw imgui::imgui 
         libzip::zip LibXml2::LibXml2
         ${MUPDF_LIBS} # Include all MuPDF libraries
-    )
+        ${LLAMACPP_LIBS}
+        )
     target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/build/vcpkg_installed/x64-windows/include)
 endif()
 
