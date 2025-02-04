@@ -71,6 +71,7 @@ include_directories(${CMAKE_SOURCE_DIR}/external/llama.cpp/ggml/include/)
 
 # Link libraries
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
+file(GLOB LLAMACPP_LIBS "${CMAKE_SOURCE_DIR}/external/llama.cpp/build/bin/*.dylib")
 target_link_libraries(${PROJECT_NAME} PRIVATE
         CURL::libcurl nlohmann_json::nlohmann_json
         PkgConfig::cairo PkgConfig::cairo-script-interpreter
@@ -78,7 +79,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         nfd::nfd glad::glad glfw imgui::imgui 
         libzip::zip LibXml2::LibXml2
         ${MUPDF_LIBS} # Include all MuPDF libraries
-        ${LLAMACPP_LIB_DIR}
+        ${LLAMACPP_LIBS}
     )
 elseif(CMAKE_SYSTEM_NAME MATCHES "Windows")
 
